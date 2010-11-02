@@ -14,14 +14,9 @@ version 9, differences between versions 8 and 9 are minimal but they exist.
 
 ## Configuring valodator
 
-Copy config file to `/etc/`
+Modify and copy config file to `/etc/` with name `valodator.config`
 
-    sudo cp valodator.config.sample /etc/valodator.sample
-
-If you don't like to polute `/etc` you can put it someplace else and change
-`valodator.py` accordingly.
-
-_Remember_: **path to config file must be absolute and not relative path**.
+    sudo cp valodator.config.sample /etc/valodator.config
 
 ## Configuring PC^2 for valodator
 
@@ -37,7 +32,8 @@ unix-like system.
 ![Languages window](http://imgur.com/yTuDY.png) ![Languages tab](http://imgur.com/hsYDe.png)
 
 If you want to be adventurous you can try replacing compiler command with
-`touch` command, this is not important and it is up to you.
+`touch {:basename}` command, this is not important and it's completely up to
+you.
 
 ### Step 2: Add new problems
 
@@ -57,10 +53,10 @@ Last argument is the reference to the problem, it has following format:
 
 Value of `<website>` can be of following
 
-* `uva`
-* `livearchive`
-* `tju`
-* `timus`
+* [uva](http://uva.onlinejudge.org/)
+* [livearchive](http://acmicpc-live-archive.uva.es/nuevoportal/)
+* [tju](http://acm.tju.edu.cn/toj/)
+* [timus](http://acm.timus.ru/)
 
 ## Future support
 

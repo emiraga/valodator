@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# from http://github.com/emiraga/valodator
 
 import sys
 import os
@@ -22,11 +23,6 @@ parser = SafeConfigParser()
 config_files = [ '/etc/valodator.config', './valodator.config' ]
 parser.read(config_files)
 
-# Don't change this
-LANG_C = 0
-LANG_CPP = 1
-LANG_JAVA = 2
-
 # From PC^2, and live-archive
 MSG_ACCEPTED = 'accepted'
 MSG_WA = 'No - Wrong Answer'
@@ -39,6 +35,11 @@ MSG_OLE = 'No - Output-limit Exceeded'
 MSG_RESTRICT = 'No - Restricted Function'
 MSG_INDET = 'No - Indeterminant'
 MSG_OTHER = 'No - Other - Contact Staff'
+
+# Don't change this
+LANG_C = 0
+LANG_CPP = 1
+LANG_JAVA = 2
 
 with open('/tmp/valodator_calls','a') as f:
 	f.write('Called:')
@@ -58,7 +59,6 @@ def BuildBrowser(cj):
 	br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1;'
 		' en-US; rv:1.9.2.10) Gecko/20100914 Firefox/3.6.10')]
 	#br.set_debug_http(True)
-	assert cj == br._ua_handlers["_cookies"].cookiejar
 	return br
 
 def view_reponse(br):
@@ -383,7 +383,7 @@ def recognize_language(fname):
 	if fname.endswith('.c'): return LANG_C
 	if fname.endswith('.cpp'): return LANG_CPP
 	if fname.endswith('.java'): return LANG_JAVA
-	raise Exception('Unrecnized file extension')
+	raise Exception('Unreconized file extension')
 
 def recognize_url(url):
 	if not url.startswith('http'):
@@ -406,20 +406,13 @@ def recognize_url(url):
 	return '',''
 
 def formatExceptionInfo(level = 6):
-     error_type, error_value, trbk = sys.exc_info()
-     tb_list = traceback.format_tb(trbk, level)    
-     s = "Error: %s \nDescription: %s \nTraceback:" % (error_type.__name__,
-			 error_value)
-     for i in tb_list:
-         s += "\n" + i
-     return s
-  
-def formatExceptionInfo1():
-    return '%s\n%s' % ('The script was cancelled by the user',
-		 ''.join(traceback.format_tb(sys.exc_info()[2])))
+	error_type, error_value, trbk = sys.exc_info()
+	tb_list = traceback.format_tb(trbk, level)    
+	return "Error: %s \nDescription: %s \nTraceback:" % (error_type.__name__,
+			error_value) + '\n'.join(tb_list)
 
 if __name__ == '__main__':
-	print 'valodator running... (v0.1-r002)'
+	print 'valodator running...'
 
 	try:
 		if len(sys.argv) < 4: raise Exception('Too few arguments')
