@@ -12,6 +12,17 @@ You need to have registered accounts on online judges and configure valodator.
 Testing was done with PC^2 version 8 and 9. Instructions shown here are for 
 version 9, differences between versions 8 and 9 are minimal but they exist.
 
+## Prerequisites
+
+* python 2.x with mechanize and BeautifulSoup
+* PC^2 version 9 (or version 8)
+
+On ubuntu you can try something like this
+
+    sudo apt-get install python-setuptools
+    sudo easy_install mechanize
+    sudo easy_install BeautifulSoup
+
 ## Configuring valodator
 
 Modify and copy config file to `/etc/` with name `valodator.config`
@@ -29,7 +40,8 @@ In the field **Execution command line** you should put something trivial like
 `echo`. I chose `echo` since it is mostly harmless and is present on every 
 unix-like system.
 
-![Languages window](http://imgur.com/yTuDY.png) ![Languages tab](http://imgur.com/hsYDe.png)
+![Languages window](http://imgur.com/yTuDY.png) 
+![Languages tab](http://imgur.com/hsYDe.png)
 
 If you want to be adventurous you can try replacing compiler command with
 `touch {:basename}` command, this is not important and it's completely up to
@@ -39,7 +51,9 @@ you.
 
 To configure problems follow screenshots shown below.
 
-![Problem window 1](http://imgur.com/9cV1H.png) ![Problem window 2](http://imgur.com/2GNzv.png) ![Problem window 3](http://imgur.com/eQZlF.png)
+![Problem window 1](http://imgur.com/9cV1H.png) 
+![Problem window 2](http://imgur.com/2GNzv.png) 
+![Problem window 3](http://imgur.com/eQZlF.png)
 
 In short, you don't need to set input/output files and you need to set
 external validator to `validator.py`. In addition, **validator command line**
@@ -62,6 +76,19 @@ Value of `<website>` can be of following
 
 This will work only until some change is made on online judge website which 
 will cause this validator to misbehave.
+
+## Known issues
+
+* Don't manually submit problems with accounts which are used by valodator. 
+  This will cause "Exception: More than one status response found".
+  Can be resolved by deleting `*_skip.txt` files.
+
+## Troubleshooting
+
+Try reading logs from `logs` directory in PC^2. Also, try reading
+`executesite1judge1/valodator_calls.log`.
+
+Send logs to me or open a new issue if you are stuck.
 
 ## Contact
 

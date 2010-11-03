@@ -7,17 +7,17 @@ import re
 import time
 import itertools
 import traceback
-import mechanize
 import cookielib
 import urllib
-from BeautifulSoup import BeautifulSoup
+import httplib
 from ConfigParser import SafeConfigParser
 
 import warnings
 warnings.filterwarnings('ignore', '.*',)
 
 MAX_REFRESHES = 15 # refresh until result appears
-COOKIE_FILE = '/tmp/valodator_cookies'
+COOKIE_FILE = './valodator_cookies'
+LOG_FILE = './valodator_calls.log'
 
 parser = SafeConfigParser()
 config_files = [ '/etc/valodator.config', './valodator.config' ]
@@ -41,11 +41,28 @@ LANG_C = 0
 LANG_CPP = 1
 LANG_JAVA = 2
 
-with open('/tmp/valodator_calls','a') as f:
-	f.write('Called:')
-	for arg in sys.argv:
-		f.write(' '+arg)
-	f.write('\n')
+def write_status(outputfile, status):
+	""" Show judgement to PC^2.
+		We want to be able to report import errors to PC^2.
+	"""
+	with open(outputfile, 'w') as f:
+		f.write('<?xml version="1.0"?>\n');
+		f.write('<result outcome="' + status +'" '
+				+'security="' + outputfile + '"></result>\n')
+
+try:
+	import mechanize
+except ImportError, e:
+	if len(sys.argv) >= 3:
+		write_status(sys.argv[2], 'Error, mechanize is not installed')
+	raise e
+
+try:
+	from BeautifulSoup import BeautifulSoup
+except ImportError, e:
+	if len(sys.argv) >= 3:
+		write_status(sys.argv[2], 'Error, BeautifulSoup is not installed')
+	raise e
 
 def BuildBrowser(cj):
 	br = mechanize.Browser(factory=mechanize.RobustFactory())
@@ -61,20 +78,7 @@ def BuildBrowser(cj):
 	#br.set_debug_http(True)
 	return br
 
-def view_reponse(br):
-	with open('/tmp/index.html','w') as f:
-		f.write( br.response().read() )
-		import webbrowser
-		webbrowser.open_new_tab("file:///tmp/index.html")
-
-class LiveArchive(object):
-	userid = parser.get('livearchive', 'userid')
-	staturl = ('http://acmicpc-live-archive.uva.es/nuevoportal/status.php?u='+
-		userid)
-	submiturl = 'http://acmicpc-live-archive.uva.es/nuevoportal/mailer.php'
-	skipfile = '/tmp/livearchive_skip.txt'
-	languages = ['C', 'C++', 'Java']
-
+class OnlineJudge(object):
 	def __init__(self, br):
 		""" We will keep a list of ID's which we must skip in a file"""
 		self.br = br
@@ -85,7 +89,28 @@ class LiveArchive(object):
 			self.skip = [ID for ID,status in self.getStatusList()]
 			with open(self.skipfile,'w') as f:
 				f.write( '\n'.join(self.skip)+'\n' )
-			print 'Written'
+			print 'Skip file written'
+
+	def add_new_skip(self, ID):
+		""" Add new ID of problem which we skip """
+		with open(self.skipfile,'a') as f: f.write( ID + '\n')
+		self.skip.append(ID)
+
+	def cleanup_after_crash(self):
+		""" Remove skip files """
+		if os.access(self.skipfile, os.F_OK):
+			os.remove(self.skipfile)
+
+class LiveArchive(OnlineJudge):
+	userid = parser.get('livearchive', 'userid')
+	staturl = ('http://acmicpc-live-archive.uva.es/nuevoportal/status.php?u='+
+		userid)
+	submiturl = 'http://acmicpc-live-archive.uva.es/nuevoportal/mailer.php'
+	skipfile = './livearchive_skip.txt'
+	languages = ['C', 'C++', 'Java']
+
+	def __init__(self, br):
+		OnlineJudge.__init__(self, br)
 
 	def getStatusList(self, skip = False):
 		ret = []
@@ -121,7 +146,7 @@ class LiveArchive(object):
 			if len(l)>=2: raise Exception('More than one status response found')
 			if len(l) == 1:
 				(ID,status) = l[0]
-				with open(self.skipfile,'a') as f: f.write( ID + '\n')
+				self.add_new_skip(ID)
 
 				if 'Accepted' in status: return MSG_ACCEPTED
 				if 'Wrong' in status: return MSG_WA
@@ -132,30 +157,21 @@ class LiveArchive(object):
 				if 'Compil' in status: return MSG_CE
 				if 'Output' in status: return MSG_OLE
 				if 'Restricted' in status: return MSG_RESTRICT
-				return MSG_OTHER
+				print 'Unknown status: ' + status
 			print '.'
 			time.sleep(1)
 		raise Exception('Status response did not arrive after many retries')
 
-class TjuOnlineJudge(object):
+class TjuOnlineJudge(OnlineJudge):
 	username = parser.get('tju','username')
 	password = parser.get('tju','password')
 	staturl = 'http://acm.tju.edu.cn/toj/status.php?user=' + username
 	submiturl = 'http://acm.tju.edu.cn/toj/submit_process.php'
-	skipfile = '/tmp/tju_skip.txt'
+	skipfile = './tju_skip.txt'
 	languages = ['0', '1', '2'] # C, C++, Java
 
 	def __init__(self, br):
-		""" We will keep a list of ID's which we must skip in a file"""
-		self.br = br
-		if os.access(self.skipfile, os.F_OK):
-			with open(self.skipfile) as f:
-				self.skip = [a.strip() for a in f]
-		else:
-			self.skip = [ID for ID,status in self.getStatusList()]
-			with open(self.skipfile,'w') as f:
-				f.write( '\n'.join(self.skip)+'\n' )
-			print 'Written'
+		OnlineJudge.__init__(self, br)
 
 	def getStatusList(self, skip = False):
 		ret = []
@@ -191,7 +207,7 @@ class TjuOnlineJudge(object):
 			if len(l)>=2: raise Exception('More than one status response found')
 			if len(l) == 1:
 				(ID,status) = l[0]
-				with open(self.skipfile,'a') as f: f.write( ID + '\n')
+				self.add_new_skip(ID)
 				if 'Accepted' in status: return MSG_ACCEPTED
 				if 'Wrong' in status: return MSG_WA
 				if 'Presentation' in status: return MSG_PE
@@ -201,30 +217,21 @@ class TjuOnlineJudge(object):
 				if 'Compil' in status: return MSG_CE
 				if 'Output' in status: return MSG_OLE
 				if 'Restricted' in status: return MSG_RESTRICT
-				return MSG_OTHER
+				print 'Unknown status: ' + status
 			print '.'
 			time.sleep(1)
 		raise Exception('Status response did not arrive after many retries')
 
-class TimusOnlineJudge(object):
+class TimusOnlineJudge(OnlineJudge):
 	userid = parser.get('timus','userid')
 	usernumber = parser.get('timus','usernumber')
 	staturl = 'http://acm.timus.ru/status.aspx?author='+usernumber
 	submiturl = 'http://acm.timus.ru/submit.aspx'
-	skipfile = '/tmp/timus_skip.txt'
+	skipfile = './timus_skip.txt'
 	languages = ['9', '10', '7'] # C, C++, Java
 
 	def __init__(self, br):
-		""" We will keep a list of ID's which we must skip in a file"""
-		self.br = br
-		if os.access(self.skipfile, os.F_OK):
-			with open(self.skipfile) as f:
-				self.skip = [a.strip() for a in f]
-		else:
-			self.skip = [ID for ID,status in self.getStatusList()]
-			with open(self.skipfile,'w') as f:
-				f.write( '\n'.join(self.skip)+'\n' )
-			print 'Written'
+		OnlineJudge.__init__(self, br)
 
 	def getStatusList(self, skip = False):
 		ret = []
@@ -261,7 +268,7 @@ class TimusOnlineJudge(object):
 			if len(l)>=2: raise Exception('More than one status response found')
 			if len(l) == 1:
 				(ID,status) = l[0]
-				with open(self.skipfile,'a') as f: f.write( ID + '\n')
+				self.add_new_skip(ID)
 				if 'Accepted' in status: return MSG_ACCEPTED
 				if 'Wrong' in status: return MSG_WA
 				if 'Presentation' in status: return MSG_PE
@@ -271,12 +278,12 @@ class TimusOnlineJudge(object):
 				if 'Compil' in status: return MSG_CE
 				if 'Output' in status: return MSG_OLE
 				if 'Restricted' in status: return MSG_RESTRICT
-				return MSG_OTHER
+				print 'Unknown status: ' + status
 			print '.'
 			time.sleep(1)
 		raise Exception('Status response did not arrive after many retries')
 
-class UvaOnlineJudge(object):
+class UvaOnlineJudge(OnlineJudge):
 	username = parser.get('uva','username')
 	password = parser.get('uva','password')
 	loginurl = 'http://uva.onlinejudge.org/'
@@ -285,19 +292,10 @@ class UvaOnlineJudge(object):
 	staturl = ('http://uva.onlinejudge.org/'+
 			'index.php?option=com_onlinejudge&Itemid=9')
 	languages = ['1', '3', '2'] # C, C++, Java
-	skipfile = '/tmp/uva_skip.txt'
+	skipfile = './uva_skip.txt'
 
 	def __init__(self, br):
-		""" We will keep a list of ID's which we must skip in a file"""
-		self.br = br
-		if os.access(self.skipfile, os.F_OK):
-			with open(self.skipfile) as f:
-				self.skip = [a.strip() for a in f]
-		else:
-			self.skip = [ID for ID,status in self.getStatusList()]
-			with open(self.skipfile,'w') as f:
-				f.write( '\n'.join(self.skip)+'\n' )
-			print 'Written'
+		OnlineJudge.__init__(self, br)
 
 	def login(self):
 		print 'opening front page'
@@ -364,7 +362,7 @@ class UvaOnlineJudge(object):
 			if len(l)>=2: raise Exception('More than one status response found')
 			if len(l) == 1:
 				(ID,status) = l[0]
-				with open(self.skipfile,'a') as f: f.write( ID + '\n')
+				self.add_new_skip(ID)
 				if 'Accepted' in status: return MSG_ACCEPTED
 				if 'Wrong' in status: return MSG_WA
 				if 'Presentation' in status: return MSG_PE
@@ -412,47 +410,60 @@ def formatExceptionInfo(level = 6):
 			error_value) + '\n'.join(tb_list)
 
 if __name__ == '__main__':
+	with open(LOG_FILE,'a') as f:
+		f.write('Called:')
+		for arg in sys.argv:
+			f.write(' '+arg)
+		f.write('\n')
 	print 'valodator running...'
 
 	try:
 		if len(sys.argv) < 4: raise Exception('Too few arguments')
-		""" valodator.py code.cpp ans.xml uva/10055 """
+
 		with open(sys.argv[1]) as f: code = f.read()
 		outputfile = sys.argv[2]
 		url = sys.argv[3]
 
 		website, problem = recognize_url(url)
+		website = website.lower()
 		language = recognize_language(sys.argv[1])
 
 		cjar = mechanize.LWPCookieJar()
 		if os.access(COOKIE_FILE, os.F_OK): cjar.load(COOKIE_FILE)
 
-		browser = BuildBrowser(cjar)
-
-		website = website.lower()
-		print 'Website is ' + website
-		if website == 'livearchive' or website == 'live-archive':
-			web = LiveArchive(browser)
-		elif website == 'uva':
-			web = UvaOnlineJudge(browser)
-		elif website == 'tju':
-			web = TjuOnlineJudge(browser)
-		elif website == 'timus':
-			web = TimusOnlineJudge(browser)
-		else:
-			raise Exception('Website not recognized');
-		
-		status = web.getVerdict(problem, language, code)
+		# some weird exception pops up due to server's error
+		for retry in xrange(10): 
+			try:
+				browser = BuildBrowser(cjar)
+				print 'Website is ' + website
+				if website == 'livearchive' or website == 'live-archive':
+					web = LiveArchive(browser)
+				elif website == 'uva':
+					web = UvaOnlineJudge(browser)
+				elif website == 'tju':
+					web = TjuOnlineJudge(browser)
+				elif website == 'timus':
+					web = TimusOnlineJudge(browser)
+				else:
+					raise Exception('Website not recognized');
+				status = web.getVerdict(problem, language, code)
+				break
+			except httplib.HTTPException, e: #BadStatusLine, IncompleteRead
+				web.cleanup_after_crash()
+				s = formatExceptionInfo()
+				print s
+				with open(LOG_FILE, 'a') as f:
+					f.write('Exception: ' + s + '\n' )
+				if retry == 9:
+					write_status(outputfile, "Error, many HTTPExceptions")
+					sys.exit(1)
 
 		cjar.save(COOKIE_FILE, ignore_discard=True, ignore_expires=True )
-
-		with open(outputfile, 'w') as f:
-			f.write('<?xml version="1.0"?>\n');
-			f.write('<result outcome="' + status +'" '
-					+'security="' + outputfile + '"></result>\n')
-	except:
+		write_status(outputfile, status)
+	except Exception, e: #gotta catch 'em all
 		s = formatExceptionInfo()
 		print s
-		with open('/tmp/valodator_calls','a') as f:
+		with open(LOG_FILE, 'a') as f:
 			f.write('Exception: ' + s + '\n' )
+		write_status(outputfile, "Exception: " + str(e))
 
