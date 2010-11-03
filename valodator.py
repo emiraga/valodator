@@ -94,7 +94,6 @@ class OnlineJudge(object):
 	def add_new_skip(self, ID):
 		""" Add new ID of problem which we skip """
 		with open(self.skipfile,'a') as f: f.write( ID + '\n')
-		self.skip.append(ID)
 
 	def cleanup_after_crash(self):
 		""" Remove skip files """
@@ -283,6 +282,67 @@ class TimusOnlineJudge(OnlineJudge):
 			time.sleep(1)
 		raise Exception('Status response did not arrive after many retries')
 
+class SpojOnlineJudge(OnlineJudge):
+	username = parser.get('spoj','username')
+	password = parser.get('spoj','password')
+	staturl = 'http://www.spoj.pl/status/'+username+'/'
+	submiturl = 'http://www.spoj.pl/submit/complete/'
+	skipfile = './spoj_skip.txt'
+	languages = ['11', '41', '10'] # C, C++, Java
+
+	def __init__(self, br):
+		OnlineJudge.__init__(self, br)
+
+	def getStatusList(self, skip = False):
+		ret = []
+		s = BeautifulSoup( self.br.open(self.staturl).read() )
+		for table in s.findAll('table','problems'):
+			for tr in table.findAll('tr'):
+				tds = tr.findAll('td')
+				if len(tds) >= 1 and len(tds[0].contents) >= 1:
+					ID = re.search('[0-9]+', str(tds[0]) )
+				else:
+					ID = None
+				if len(tds) >= 5 and len(tds[4].contents) >= 1:
+					status = str(tds[4])
+				else:
+					status = None
+				if ID and len(ID.group()) >= 6 and status and (
+						not skip or ID.group() not in self.skip ):
+					ret.append( (ID.group(), status  ) )
+		return ret
+
+	def getVerdict(self, problem, language, code):
+		data = {
+			'login_user'   : self.username,
+			'password'     : self.password,
+			'problemcode'  : problem,
+			'lang'         : self.languages[ language ],
+			'file'         : code,
+			'submit'       : 'Send',
+		}
+		resp = self.br.open( self.submiturl, urllib.urlencode(data) )
+		if len(resp.read()) < 2000: raise Exception('Response was too small')
+		for x in xrange(MAX_REFRESHES):
+			l = self.getStatusList(True)
+			if len(l)>=2: raise Exception('More than one status response found')
+			if len(l) == 1:
+				(ID,status) = l[0]
+				self.add_new_skip(ID)
+				if 'accepted' in status: return MSG_ACCEPTED
+				if 'wrong answer' in status: return MSG_WA
+				if 'presentation' in status: return MSG_PE
+				if 'time limit' in status: return MSG_TLE
+				if 'memory' in status: return MSG_MLE
+				if 'runtime' in status: return MSG_RE
+				if 'compilation' in status: return MSG_CE
+				if 'output' in status: return MSG_OLE
+				if 'restricted' in status: return MSG_RESTRICT
+				print 'Unknown status: ' + status
+			print '.'
+			time.sleep(1)
+		raise Exception('Status response did not arrive after many retries')
+
 class UvaOnlineJudge(OnlineJudge):
 	username = parser.get('uva','username')
 	password = parser.get('uva','password')
@@ -401,6 +461,11 @@ def recognize_url(url):
 		ID = re.search('num=([0-9]+)', url)
 		if not ID: raise Exception('Problem ID not found')
 		return 'timus', ID.group(1)
+	if (url.startswith('https://www.spoj.pl/') or 
+			url.startswith('http://www.spoj.pl/')):
+		ID = re.search('spoj.pl/problems/([^/]+)/')
+		if not ID: raise Exception('Problem ID not found')
+		return 'spoj', ID.group(1)
 	return '',''
 
 def formatExceptionInfo(level = 6):
@@ -444,6 +509,8 @@ if __name__ == '__main__':
 					web = TjuOnlineJudge(browser)
 				elif website == 'timus':
 					web = TimusOnlineJudge(browser)
+				elif website == 'spoj':
+					web = SpojOnlineJudge(browser)
 				else:
 					raise Exception('Website not recognized');
 				status = web.getVerdict(problem, language, code)

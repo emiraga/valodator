@@ -9,6 +9,10 @@ password =
 userid = 12345VI
 usernumber = 12345
 
+[spoj]
+username = 
+password = 
+
 [uva]
 username = 
 password = 

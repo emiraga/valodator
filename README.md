@@ -71,6 +71,7 @@ Value of `<website>` can be of following
 * [livearchive](http://acmicpc-live-archive.uva.es/nuevoportal/)
 * [tju](http://acm.tju.edu.cn/toj/)
 * [timus](http://acm.timus.ru/)
+* [spoj](http://www.spoj.pl/)
 
 ## Future support
 
@@ -85,7 +86,7 @@ will cause this validator to misbehave.
 
 ## Troubleshooting
 
-Try reading logs from `logs` directory in PC^2. Also, try reading
+Try reading logs from `logs` directory in PC^2 . Also, try reading
 `executesite1judge1/valodator_calls.log`.
 
 Send logs to me or open a new issue if you are stuck.
