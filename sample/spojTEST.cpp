@@ -1,3 +1,6 @@
+/*
+ * Solution for problem TEST from spoj
+ */
 #include <iostream>
 using namespace std;
 
