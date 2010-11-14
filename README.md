@@ -44,8 +44,8 @@ unix-like system.
 ![Languages tab](http://imgur.com/hsYDe.png)
 
 If you want to be adventurous you can try replacing compiler command with
-`touch {:basename}` command, this is not important and it's completely up to
-you.
+`touch {:basename}`, this is not recommended since using local compiler
+allows us to catch compile errors much easier and faster.
 
 ### Step 2: Add new problems
 
