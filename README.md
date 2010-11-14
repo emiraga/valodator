@@ -14,7 +14,7 @@ version 9, differences between versions 8 and 9 are minimal but they exist.
 
 ## Prerequisites
 
-* python 2.x with mechanize and BeautifulSoup
+* python 2.x with `mechanize` and `BeautifulSoup`
 * PC^2 version 9 (or version 8)
 
 On ubuntu you can try something like this
@@ -75,21 +75,22 @@ Value of `<website>` can be of following
 
 ## Future support
 
-This will work only until some change is made on online judge website which 
-will cause this validator to misbehave.
-
-## Known issues
-
-* Don't manually submit problems with accounts which are used by valodator. 
-  This will cause "Exception: More than one status response found".
-  Can be resolved by deleting `*_skip.txt` files.
+valodator will work until some change is made on judge website which might
+cause valodator to stop working suddenly. I will try to fix any upcoming
+incompatibility, but without any guarantees.
 
 ## Troubleshooting
 
 Try reading logs from `logs` directory in PC^2 . Also, try reading
 `executesite1judge1/valodator_calls.log`.
 
-Send logs to me or open a new issue if you are stuck.
+Send description/logs to me and open a new issue on github.
+
+## Warning
+
+Using automated bots for submitting problems can violate terms of use
+of certain online judges. I expect it's moderate usage to be for organizing
+small scale contests 3-7 teams, without flooding the judge server.
 
 ## Contact
 
