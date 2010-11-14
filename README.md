@@ -56,7 +56,7 @@ To configure problems follow screenshots shown below.
 ![Problem window 3](http://imgur.com/eQZlF.png)
 
 In short, you don't need to set input/output files and you need to set
-external validator to `validator.py`. In addition, **validator command line**
+external validator to `valodator.py`. In addition, **validator command line**
 should be  set to, for example:
 
     ./{:validator} {:mainfile} {:resfile} tju/1001
