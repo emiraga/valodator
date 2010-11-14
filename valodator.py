@@ -1,21 +1,18 @@
 #!/usr/bin/env python
 """ 
-    Use PC^2 with online judges
-    from http://github.com/emiraga/valodator
+    Use PC^2 (Programming Contest Control) with online judges.
+    Website: http://github.com/emiraga/valodator
 """
 
-import sys
 import os
 import re
+import sys
 import time
-import itertools
-import traceback
 import urllib
 import httplib
+import itertools
+import traceback
 from ConfigParser import SafeConfigParser
-
-import warnings
-warnings.filterwarnings('ignore', '.*', )
 
 MAX_REFRESHES = 60 # refresh until result appears
 COOKIE_FILE = './valodator_cookies'
@@ -40,35 +37,34 @@ LANG_C = 0
 LANG_CPP = 1
 LANG_JAVA = 2
 
-def write_status(outfile, status):
+def write_status(status):
     """ Show judgement to PC^2.
         We want to be able to report import/config errors to PC^2.
     """
-    with open(outfile, 'w') as fout:
-        fout.write('<?xml version="1.0"?>\n')
-        fout.write('<result outcome="' + status +'" '
-                +'security="' + outfile + '"></result>\n')
+    # status output file is supposed to be the second argument to the script
+    if len(sys.argv) >= 3:
+        with open(sys.argv[2], 'w') as fout:
+            fout.write('<?xml version="1.0"?>\n')
+            fout.write('<result outcome="' + status +'" '+
+                'security="' + sys.argv[2] + '"></result>\n')# XML injection?
 
 #Load config
 PARSER = SafeConfigParser()
 if not len(PARSER.read(CONFIG_FILES)):
-    if len(sys.argv) >= 3:
-        write_status(sys.argv[2], 'Error, valodator.config is not found.'+
-                ' It should be in /etc/.')
+    write_status('Error, valodator.config is not found.'+
+            ' It should be in /etc/.')
     raise Exception("Config not found")
 
 try:
     import mechanize
 except ImportError, excpt:
-    if len(sys.argv) >= 3:
-        write_status(sys.argv[2], 'Error, mechanize is not installed')
+    write_status('Error, mechanize is not installed')
     raise excpt
 
 try:
     from BeautifulSoup import BeautifulSoup
 except ImportError, excpt:
-    if len(sys.argv) >= 3:
-        write_status(sys.argv[2], 'Error, BeautifulSoup is not installed')
+    write_status('Error, BeautifulSoup is not installed')
     raise excpt
 
 class ValodatorException(Exception):
@@ -120,9 +116,20 @@ def build_browser(cookiejar):
 
 class OnlineJudge(object):
     """ Abstract class for online judge website """
-    skipfile = ''
+    skipfile = '' # override this
+    mapstatus = {
+        'Accepted' : MSG_ACCEPTED,
+        'Wrong' : MSG_WA,
+        'Presentation' : MSG_PE,
+        'Time' : MSG_TLE,
+        'Memory' : MSG_MLE,
+        'Runtime' : MSG_RE, 'Crash' : MSG_RE,
+        'Compil' : MSG_CE,
+        'Output' : MSG_OLE,
+        'Restricted' : MSG_RESTRICT,
+    }
     def __init__(self, br_):
-        """ We will keep a list of id_'s which we must skip in a file"""
+        """ We will keep a list of id_'s which we must skip in a file """
         self.br_ = br_
         if os.access(self.skipfile, os.F_OK):
             with open(self.skipfile) as fskip:
@@ -144,12 +151,30 @@ class OnlineJudge(object):
         """ Remove skipfiles """
         if os.access(self.skipfile, os.F_OK):
             os.remove(self.skipfile)
+
     def get_verdict(self, problem, language, code, retry=True):
-        """ Override this method """
+        """ 
+            Given the problem ID, language, and code; submit this solution to
+            online judge and read the verdict.
+
+            Override this method.
+        """
         pass
-    def get_status_list(self, skip = False, retry=True):
-        """ Override this method """
+
+    def get_status_list(self, skip=False, retry=True):
+        """
+            Read the list of IDs and statuses from website.
+
+            Override this method.
+        """
         pass
+
+    def guess_verdict(self, status):
+        """ Based on status message guess verdict from the judge """
+        for pattern, msg in self.mapstatus.items():
+            if pattern in status:
+                return msg
+        return None
 
 class LiveArchive(OnlineJudge):
     """ Online judge live archive icpc """
@@ -194,31 +219,16 @@ class LiveArchive(OnlineJudge):
         resp = self.br_.open( self.submiturl, urllib.urlencode(data) )
         if len(resp.read()) < 2000:
             raise ResponseTooSmall()
-        for refresh_num in xrange(MAX_REFRESHES):
+        for _ in xrange(MAX_REFRESHES):
             slist = self.get_status_list(True)
             if len(slist)>=2:
                 raise TooManyVerdicts()
             if len(slist) == 1:
                 (id_, status) = slist[0]
                 self.add_new_skip(id_)
-                if 'Accepted' in status:
-                    return MSG_ACCEPTED
-                if 'Wrong' in status:
-                    return MSG_WA
-                if 'Presentation' in status:
-                    return MSG_PE
-                if 'Time' in status:
-                    return MSG_TLE
-                if 'Memory' in status:
-                    return MSG_MLE
-                if 'Runtime' in status:
-                    return MSG_RE
-                if 'Compil' in status:
-                    return MSG_CE
-                if 'Output' in status:
-                    return MSG_OLE
-                if 'Restricted' in status:
-                    return MSG_RESTRICT
+                guess = self.guess_verdict(status)
+                if guess:
+                    return guess
                 print 'Unknown status: ' + status
             print '.'
             time.sleep(2)
@@ -272,31 +282,16 @@ class TjuOnlineJudge(OnlineJudge):
             raise SubmitTooQuick()
         if 'code has been submitted' not in resp:
             raise CodeNotSubmitted()
-        for refresh_num in xrange(MAX_REFRESHES):
+        for _ in xrange(MAX_REFRESHES):
             slist = self.get_status_list(True)
             if len(slist)>=2:
                 raise TooManyVerdicts()
             if len(slist) == 1:
                 (id_, status) = slist[0]
                 self.add_new_skip(id_)
-                if 'Accepted' in status:
-                    return MSG_ACCEPTED
-                if 'Wrong' in status:
-                    return MSG_WA
-                if 'Presentation' in status:
-                    return MSG_PE
-                if 'Time' in status:
-                    return MSG_TLE
-                if 'Memory' in status:
-                    return MSG_MLE
-                if 'Runtime' in status:
-                    return MSG_RE
-                if 'Compil' in status:
-                    return MSG_CE
-                if 'Output' in status:
-                    return MSG_OLE
-                if 'Restricted' in status:
-                    return MSG_RESTRICT
+                guess = self.guess_verdict(status)
+                if guess:
+                    return guess
                 print 'Unknown status: ' + status
             print '.'
             time.sleep(2)
@@ -346,44 +341,40 @@ class TimusOnlineJudge(OnlineJudge):
         resp = self.br_.open( self.submiturl, urllib.urlencode(data) )
         if len(resp.read()) < 800:
             raise ResponseTooSmall()
-        for refresh_num in xrange(MAX_REFRESHES):
+        for _ in xrange(MAX_REFRESHES):
             slist = self.get_status_list(True)
             if len(slist)>=2:
                 raise TooManyVerdicts()
             if len(slist) == 1:
                 (id_, status) = slist[0]
                 self.add_new_skip(id_)
-                if 'Accepted' in status:
-                    return MSG_ACCEPTED
-                if 'Wrong' in status:
-                    return MSG_WA
-                if 'Presentation' in status:
-                    return MSG_PE
-                if 'Time' in status:
-                    return MSG_TLE
-                if 'Memory' in status:
-                    return MSG_MLE
-                if 'Runtime' in status or 'Crash' in status:
-                    return MSG_RE
-                if 'Compil' in status:
-                    return MSG_CE
-                if 'Output' in status:
-                    return MSG_OLE
-                if 'Restricted' in status:
-                    return MSG_RESTRICT
+                guess = self.guess_verdict(status)
+                if guess:
+                    return guess
                 print 'Unknown status: ' + status
             print '.'
             time.sleep(2)
         raise NoVerdictMaxRefreshes()
 
 class SpojOnlineJudge(OnlineJudge):
-    """ Online judge spoj """
+    """ Sphere Online Judge """
     username = PARSER.get('spoj', 'username')
     password = PARSER.get('spoj', 'password')
     staturl = 'http://www.spoj.pl/status/'+username+'/'
     submiturl = 'http://www.spoj.pl/submit/complete/'
     skipfile = './spoj_skip.txt'
     languages = ['11', '41', '10'] # C, C++, Java
+    mapstatus = {
+        'accepted' : MSG_ACCEPTED,
+        'wrong answer' : MSG_WA,
+        'presentation' : MSG_PE,
+        'time limit' : MSG_TLE,
+        'memory' : MSG_MLE,
+        'runtime' : MSG_RE,
+        'compilation' : MSG_CE,
+        'output' : MSG_OLE,
+        'restricted' : MSG_RESTRICT,
+    }
 
     def __init__(self, br_):
         OnlineJudge.__init__(self, br_)
@@ -420,31 +411,16 @@ class SpojOnlineJudge(OnlineJudge):
         resp = self.br_.open( self.submiturl, urllib.urlencode(data) )
         if len(resp.read()) < 2000:
             raise ResponseTooSmall()
-        for refresh_num in xrange(MAX_REFRESHES):
+        for _ in xrange(MAX_REFRESHES):
             slist = self.get_status_list(True)
             if len(slist)>=2:
                 raise TooManyVerdicts()
             if len(slist) == 1:
                 (id_, status) = slist[0]
                 self.add_new_skip(id_)
-                if 'accepted' in status:
-                    return MSG_ACCEPTED
-                if 'wrong answer' in status:
-                    return MSG_WA
-                if 'presentation' in status:
-                    return MSG_PE
-                if 'time limit' in status:
-                    return MSG_TLE
-                if 'memory' in status:
-                    return MSG_MLE
-                if 'runtime' in status:
-                    return MSG_RE
-                if 'compilation' in status:
-                    return MSG_CE
-                if 'output' in status:
-                    return MSG_OLE
-                if 'restricted' in status:
-                    return MSG_RESTRICT
+                guess = self.guess_verdict(status)
+                if guess:
+                    return guess
                 print 'Unknown status: ' + status
             print '.'
             time.sleep(2)
@@ -477,10 +453,10 @@ class UvaOnlineJudge(OnlineJudge):
         self.br_.form['username'] = self.username
         self.br_.form['passwd'] = self.password
         self.br_.form['remember'] = ['yes']
-        print 'logging in '
+        print 'logging in...'
         self.br_.submit()
 
-    def get_status_list(self, skip = False, retry=True):
+    def get_status_list(self, skip=False, retry=True):
         ret = []
         resp = self.br_.open(self.staturl)
         try:
@@ -527,31 +503,16 @@ class UvaOnlineJudge(OnlineJudge):
                 raise CouldNotLogin()
         if len(resp.read()) < 2000:
             raise ResponseTooSmall()
-        for refresh_num in xrange(MAX_REFRESHES):
+        for _ in xrange(MAX_REFRESHES):
             slist = self.get_status_list(True)
             if len(slist)>=2:
                 raise TooManyVerdicts()
             if len(slist) == 1:
                 (id_, status) = slist[0]
                 self.add_new_skip(id_)
-                if 'Accepted' in status:
-                    return MSG_ACCEPTED
-                if 'Wrong' in status:
-                    return MSG_WA
-                if 'Presentation' in status:
-                    return MSG_PE
-                if 'Time' in status:
-                    return MSG_TLE
-                if 'Memory' in status:
-                    return MSG_MLE
-                if 'Runtime' in status:
-                    return MSG_RE
-                if 'Compil' in status:
-                    return MSG_CE
-                if 'Output' in status:
-                    return MSG_OLE
-                if 'Restricted' in status:
-                    return MSG_RESTRICT
+                guess = self.guess_verdict(status)
+                if guess:
+                    return guess
                 print 'Unknown status: ' + status
             time.sleep(2)
             print '.'
@@ -562,6 +523,8 @@ def recognize_language(fname):
     if fname.endswith('.c'):
         return LANG_C
     if fname.endswith('.cpp'):
+        return LANG_CPP
+    if fname.endswith('.cc'):
         return LANG_CPP
     if fname.endswith('.java'):
         return LANG_JAVA
@@ -574,21 +537,25 @@ def recognize_problem(url):
         if len(spl) != 2:
             raise Exception('Problem code/URL is weird')
         return spl
+
     if url.startswith('http://acmicpc-live-archive.uva.es/'):
         id_ = re.search('[0-9]+', url)
         if not id_:
             raise Exception('Problem id_ not found')
         return 'livearchive', id_.group()
+
     if url.startswith('http://acm.tju.edu.cn'):
         id_ = re.search('[0-9]+', url)
         if not id_:
             raise Exception('Problem id_ not found')
         return 'tju', id_.group()
+
     if url.startswith('http://acm.timus.ru/'):
         id_ = re.search('num=([0-9]+)', url)
         if not id_:
             raise Exception('Problem id_ not found')
         return 'timus', id_.group(1)
+
     if (url.startswith('https://www.spoj.pl/') or 
             url.startswith('http://www.spoj.pl/')):
         id_ = re.search('spoj.pl/problems/([^/]+)/', url)
@@ -605,8 +572,8 @@ def format_exception_info(level = 6):
             error_value) + '\n'.join(tb_list)
 
 def build_web_judge(website, browser):
-    """ Build a OnlineJudge object """
-    if website == 'livearchive' or website == 'live-archive':
+    """ Build a derived OnlineJudge object """
+    if website == 'livearchive' or website == 'live-archive' or website == 'la':
         web = LiveArchive(browser)
     elif website == 'uva':
         web = UvaOnlineJudge(browser)
@@ -622,16 +589,16 @@ def build_web_judge(website, browser):
 
 def main():
     """ Program's entry point """
-    with open(LOG_FILE, 'a') as flog:
-        flog.write('Called:')
-        for arg in sys.argv:
-            flog.write(' '+arg)
-        flog.write('\n')
-    print 'valodator running...'
-
     try:
+        web = None
         if len(sys.argv) < 4:
-            raise Exception('Too few arguments')
+            print "Usage: " + sys.argv[0] + " code.ext out.xml website/problem"
+            print
+            print "ext = c | cpp | cc | java"
+            print "website = livearchive | uva | tju | timus | spoj"
+            print
+            write_status('Too few arguments to valodator.py')
+            sys.exit(1)
 
         with open(sys.argv[1]) as fcode:
             code = fcode.read()
@@ -661,12 +628,12 @@ def main():
                 with open(LOG_FILE, 'a') as flog:
                     flog.write('Exception: ' + stack + '\n' )
                 if retry == 9:
-                    write_status(sys.argv[2], "Error, too many retryables.")
+                    write_status("Error, too many retryables.")
                     sys.exit(1)
                 time.sleep(2)
 
         cjar.save(COOKIE_FILE, ignore_discard=True, ignore_expires=True )
-        write_status(sys.argv[2], status)
+        write_status(status)
     except Exception, exc: #gotta catch 'em all, for logging purposes
         if web:
             web.cleanup_after_crash()
@@ -674,8 +641,7 @@ def main():
         print stack
         with open(LOG_FILE, 'a') as flog:
             flog.write('Exception: ' + stack + '\n' )
-        if len(sys.argv) >= 3:
-            write_status(sys.argv[2], "Exception: " + str(exc))
+        write_status("Exception: " + str(exc))
 
 if __name__ == '__main__':
     main()
