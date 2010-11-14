@@ -82,9 +82,18 @@ incompatibility, but without any guarantees.
 ## Troubleshooting
 
 Try reading logs from `logs` directory in PC^2 . Also, try reading
-`executesite1judge1/valodator_calls.log`.
+`executesite1judgeX/valodator_calls.log`.
 
 Send description/logs to me and open a new issue on github.
+
+## Limitations
+
+* If you would like to have two computer judges running is parallel,
+  you need to use different website account for each judge. Otherwise
+  verdicts will be mixed up. `valodator.config` can be placed in
+  `executesite1judgeX/` instead of `/etc/`.
+* Do not use account used by valodator for manual submissions.
+  This may lead to lots of problems.
 
 ## Warning
 
