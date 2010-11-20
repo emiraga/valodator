@@ -94,7 +94,9 @@ class NoVerdictMaxRefreshes(WrongInputException):
 class CouldNotLogin(WrongInputException):
     """ Login failure, wrong username/password? """
     pass
-
+class ConfigError(ValodatorException):
+    """ When there is a missing entry of wrong entry in config file """
+    pass
 def build_browser(cookiejar):
     """ Returns a mechanize.Browser object properly configured """
     browser = mechanize.Browser(factory=mechanize.RobustFactory())
@@ -178,14 +180,15 @@ class OnlineJudge(object):
 
 class LiveArchive(OnlineJudge):
     """ Online judge live archive icpc """
-    userid = PARSER.get('livearchive', 'userid')
-    staturl = ('http://acmicpc-live-archive.uva.es/nuevoportal/status.php?u='+
-        userid)
     submiturl = 'http://acmicpc-live-archive.uva.es/nuevoportal/mailer.php'
     skipfile = './livearchive_skip.txt'
     languages = ['C', 'C++', 'Java']
 
     def __init__(self, br_):
+        self.userid = PARSER.get('livearchive', 'userid')
+        self.staturl = ('http://acmicpc-live-archive.uva.es/nuevoportal'
+                + '/status.php?u=' + self.userid)
+        #Call parent contructor
         OnlineJudge.__init__(self, br_)
 
     def get_status_list(self, skip=False, retry=True):
@@ -236,14 +239,16 @@ class LiveArchive(OnlineJudge):
 
 class TjuOnlineJudge(OnlineJudge):
     """ Online judge tju """
-    username = PARSER.get('tju', 'username')
-    password = PARSER.get('tju', 'password')
-    staturl = 'http://acm.tju.edu.cn/toj/status.php?user=' + username
     submiturl = 'http://acm.tju.edu.cn/toj/submit_process.php'
     skipfile = './tju_skip.txt'
     languages = ['0', '1', '2'] # C, C++, Java
 
     def __init__(self, br_):
+        self.username = PARSER.get('tju', 'username')
+        self.password = PARSER.get('tju', 'password')
+        self.staturl = ('http://acm.tju.edu.cn/toj/status.php?user='
+                + self.username)
+        #Call parent contructor
         OnlineJudge.__init__(self, br_)
 
     def get_status_list(self, skip=False, retry=True):
@@ -299,14 +304,19 @@ class TjuOnlineJudge(OnlineJudge):
 
 class TimusOnlineJudge(OnlineJudge):
     """ Online judge timus """
-    userid = PARSER.get('timus', 'userid')
-    usernumber = PARSER.get('timus', 'usernumber')
-    staturl = 'http://acm.timus.ru/status.aspx?author='+usernumber
     submiturl = 'http://acm.timus.ru/submit.aspx'
     skipfile = './timus_skip.txt'
     languages = ['9', '10', '7'] # C, C++, Java
 
     def __init__(self, br_):
+        self.userid = PARSER.get('timus', 'userid')
+        number = re.search('[0-9]+', self.userid )
+        if not number:
+            raise ConfigError()
+        self.usernumber = number.group()
+        self.staturl = ('http://acm.timus.ru/status.aspx?author='
+                + self.usernumber)
+        #Call parent contructor
         OnlineJudge.__init__(self, br_)
 
     def get_status_list(self, skip=False, retry=True):
@@ -358,9 +368,6 @@ class TimusOnlineJudge(OnlineJudge):
 
 class SpojOnlineJudge(OnlineJudge):
     """ Sphere Online Judge """
-    username = PARSER.get('spoj', 'username')
-    password = PARSER.get('spoj', 'password')
-    staturl = 'http://www.spoj.pl/status/'+username+'/'
     submiturl = 'http://www.spoj.pl/submit/complete/'
     skipfile = './spoj_skip.txt'
     languages = ['11', '41', '10'] # C, C++, Java
@@ -377,6 +384,10 @@ class SpojOnlineJudge(OnlineJudge):
     }
 
     def __init__(self, br_):
+        self.username = PARSER.get('spoj', 'username')
+        self.password = PARSER.get('spoj', 'password')
+        self.staturl = 'http://www.spoj.pl/status/' + self.username + '/'
+        #Call parent contructor
         OnlineJudge.__init__(self, br_)
 
     def get_status_list(self, skip=False, retry=True):
@@ -428,8 +439,6 @@ class SpojOnlineJudge(OnlineJudge):
 
 class UvaOnlineJudge(OnlineJudge):
     """ Online judge UVa """
-    username = PARSER.get('uva', 'username')
-    password = PARSER.get('uva', 'password')
     loginurl = 'http://uva.onlinejudge.org/'
     submiturl = ('http://uva.onlinejudge.org/index.php?'+
             'option=com_onlinejudge&Itemid=25&page=save_submission')
@@ -439,6 +448,9 @@ class UvaOnlineJudge(OnlineJudge):
     skipfile = './uva_skip.txt'
 
     def __init__(self, br_):
+        self.username = PARSER.get('uva', 'username')
+        self.password = PARSER.get('uva', 'password')
+        #Call parent contructor
         OnlineJudge.__init__(self, br_)
 
     def login(self):
