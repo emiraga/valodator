@@ -41,7 +41,10 @@ In the field **Execution command line** you should put something trivial like
 unix-like system.
 
 [Languages window](http://imgur.com/yTuDY.png) 
+![Languages window](http://imgur.com/yTuDY.png) 
+
 [Languages tab](http://imgur.com/hsYDe.png)
+![Languages tab](http://imgur.com/hsYDe.png)
 
 If you want to be adventurous you can try replacing compiler command with
 `touch {:basename}`, this is not recommended since using local compiler
@@ -52,8 +55,13 @@ allows us to catch compile errors much easier and faster.
 To configure problems follow screenshots shown below.
 
 [New problem window 1](http://imgur.com/9cV1H.png) 
+![New problem window 1](http://imgur.com/9cV1H.png) 
+
 [New problem window 2](http://imgur.com/2GNzv.png) 
+![New problem window 2](http://imgur.com/2GNzv.png) 
+
 [New problem window 3](http://imgur.com/eQZlF.png)
+![New problem window 3](http://imgur.com/eQZlF.png)
 
 In short, you don't need to set input/output files and you need to set
 external validator to `valodator.py`. In addition, **validator command line**
