@@ -1,19 +1,22 @@
 ## Description
 
 Running practice contests on PC^2 requires you to have input/output data for
-each problem. Sometimes it is not available. This solution allows you to use
-regular PC^2 but with custom external validator which will submit problem to
-online judge and read the verdict.
+each problem. Sometimes this data is not available. Valodator allows you 
+to use regular PC^2 with custom external validator which is going to submit 
+submitted problem to online judge and read the verdict.
 
-You need to have registered accounts on online judges and configure valodator.
+You need to have valid accounts on online judges and configure valodator
+accordingly.
 
 ## Supported PC^2 on linux
 
-Testing was done with PC^2 version 8 and 9. Instructions shown here are for 
-version 9, differences between versions 8 and 9 are minimal but they exist.
+Testing was done on linux with with PC^2 version 8 and 9. Instructions shown
+here are for version 9, differences between versions 8 and 9 are minimal but
+they exist.
 
 ## Prerequisites
 
+* linux or similar unix-like OS (winblows is also possible, patches welcome).
 * python 2.x with `mechanize` and `BeautifulSoup`
 * PC^2 version 9 (or version 8)
 
@@ -106,7 +109,7 @@ Send description/logs to me and open a new issue on github.
 ## Warning
 
 Using automated bots for submitting problems can violate terms of use
-of certain online judges. I expect it's moderate usage to be for organizing
+of certain online judges. I expect valodator's moderate usage to be for organizing
 small scale contests 3-7 teams, without flooding the judge server.
 
 ## Contact
