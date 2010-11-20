@@ -653,7 +653,7 @@ def main():
         print stack
         with open(LOG_FILE, 'a') as flog:
             flog.write('Exception: ' + stack + '\n' )
-        write_status("Exception: " + str(exc))
+        write_status(str(type(exc)) + " " + str(exc))
 
 if __name__ == '__main__':
     main()
