@@ -87,7 +87,7 @@ Value of `<website>` can be of following
 
 valodator will work until some change is made on judge website which might
 cause valodator to stop working suddenly. I will try to fix any upcoming
-incompatibility, but without any guarantees.
+incompatibilities, but without any guarantees.
 
 ## Troubleshooting
 

@@ -177,7 +177,6 @@ class OnlineJudge(object):
 
     def guess_verdict(self, status):
         """ Based on status message guess verdict from the judge """
-        print 'status = "' + status + '"'
         for pattern, msg in self.mapstatus.items():
             if pattern in status:
                 return msg
@@ -238,7 +237,6 @@ class LiveArchive(OnlineJudge):
                 if guess:
                     return guess
                 print 'Unknown status: ' + status
-            print '.'
             time.sleep(2)
         raise NoVerdictMaxRefreshes()
 
@@ -303,7 +301,6 @@ class TjuOnlineJudge(OnlineJudge):
                 if guess:
                     return guess
                 print 'Unknown status: ' + status
-            print '.'
             time.sleep(2)
         raise NoVerdictMaxRefreshes()
 
@@ -367,7 +364,6 @@ class TimusOnlineJudge(OnlineJudge):
                 if guess:
                     return guess
                 print 'Unknown status: ' + status
-            print '.'
             time.sleep(2)
         raise NoVerdictMaxRefreshes()
 
@@ -438,7 +434,6 @@ class SpojOnlineJudge(OnlineJudge):
                 if guess:
                     return guess
                 print 'Unknown status: ' + status
-            print '.'
             time.sleep(2)
         raise NoVerdictMaxRefreshes()
 
@@ -532,7 +527,6 @@ class UvaOnlineJudge(OnlineJudge):
                     return guess
                 print 'Unknown status: ' + status
             time.sleep(2)
-            print '.'
         raise NoVerdictMaxRefreshes()
 
 def recognize_language(fname):
