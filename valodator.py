@@ -125,8 +125,12 @@ class OnlineJudge(object):
         'Presentation' : MSG_PE,
         'Time' : MSG_TLE,
         'Memory' : MSG_MLE,
-        'Runtime' : MSG_RE, 'Crash' : MSG_RE,
-        'Compil' : MSG_CE,
+        'Runtime' : MSG_RE,
+        'Crash' : MSG_RE,
+        'Compile Error' : MSG_CE,
+        'Compile error' : MSG_CE,
+        'Compilation error' : MSG_CE,
+        'Compilation Error' : MSG_CE,
         'Output' : MSG_OLE,
         'Restricted' : MSG_RESTRICT,
     }
@@ -173,6 +177,7 @@ class OnlineJudge(object):
 
     def guess_verdict(self, status):
         """ Based on status message guess verdict from the judge """
+        print 'status = "' + status + '"'
         for pattern, msg in self.mapstatus.items():
             if pattern in status:
                 return msg
@@ -378,7 +383,7 @@ class SpojOnlineJudge(OnlineJudge):
         'time limit' : MSG_TLE,
         'memory' : MSG_MLE,
         'runtime' : MSG_RE,
-        'compilation' : MSG_CE,
+        'compilation error' : MSG_CE,
         'output' : MSG_OLE,
         'restricted' : MSG_RESTRICT,
     }
