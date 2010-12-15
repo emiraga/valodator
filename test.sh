@@ -4,7 +4,7 @@
 
 mkdir testout
 
-./valodator.py sample/livearchive2158.cpp testout/la.xml la/2158
+./valodator.py sample/livearchive2158.cpp testout/livearchive.xml livearchive/2158
 sleep 2 #sleeping is nice
 
 ./valodator.py sample/spojTEST.cpp testout/spoj.xml spoj/TEST
@@ -18,7 +18,7 @@ sleep 2
 
 ./valodator.py sample/uva10055.cpp testout/uva.xml uva/10055
 
-cat testout/la.xml
+cat testout/livearchive.xml
 cat testout/spoj.xml
 cat testout/timus.xml
 cat testout/tju.xml

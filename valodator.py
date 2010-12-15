@@ -19,7 +19,7 @@ COOKIE_FILE = './valodator_cookies'
 LOG_FILE = './valodator_calls.log'
 CONFIG_FILES = [ '/etc/valodator.config', './valodator.config' ]
 
-# From PC^2, and live-archive
+# From PC^2, and livearchive
 MSG_ACCEPTED = 'accepted'
 MSG_WA = 'No - Wrong Answer'
 MSG_RE = 'No - Runtime Error'
@@ -183,7 +183,7 @@ class OnlineJudge(object):
         return None
 
 class LiveArchive(OnlineJudge):
-    """ Online judge live archive icpc """
+    """ Online judge livearchive icpc """
     submiturl = 'http://acmicpc-live-archive.uva.es/nuevoportal/mailer.php'
     skipfile = './livearchive_skip.txt'
     languages = ['C', 'C++', 'Java']
@@ -584,7 +584,7 @@ def format_exception_info(level = 6):
 
 def build_web_judge(website, browser):
     """ Build a derived OnlineJudge object """
-    if website == 'livearchive' or website == 'live-archive' or website == 'la':
+    if website == 'livearchive':
         web = LiveArchive(browser)
     elif website == 'uva':
         web = UvaOnlineJudge(browser)
