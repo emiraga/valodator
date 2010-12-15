@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# Purpose: inject problems/languages/accounts in pc2
+# Author : emiraga@gmail.com
+#
+
+. `dirname $0`/pc2env
+
+java -Xms64M -Xmx768M -cp $libdir/pc2.jar:$mclbdir/mclb.jar:. Injector $*

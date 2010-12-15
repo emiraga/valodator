@@ -1,0 +1,10 @@
+This is a collecion of hacks for quick-and-dirty organizing new contests.
+
+If you follow normal installation procedure, please ignore this directory.
+
+Assuming that you want this, copy all files from this folder to "pc2/bin/"
+and also copy "valodator.py" to "pc2/bin". You will need to overwrite "pc2server".
+
+"./completeRebootInject.sh" will stop pc^2 and start it again with many things
+already added which does simplify administration, especially if you are a student
+and don't have time to waste on setup of contests.

@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Purpose: print version number
+# Author : pc2@ecs.csus.edu
+#
+# Modified just a bit
+#
+
+. `dirname $0`/pc2env
+
+java -Xms64M -Xmx768M -cp $libdir/pc2.jar:$mclbdir/mclb.jar:. Starter --server $*
+
