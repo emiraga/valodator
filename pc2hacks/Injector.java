@@ -61,6 +61,8 @@ public final class Injector
 			langc.setCompileCommandLine("gcc -lm -o {:basename} {:mainfile}");
 			langc.setProgramExecuteCommandLine("echo valodator");
 			langc.setExecutableIdentifierMask("{:basename}");
+			controller.addNewLanguage(langc);
+
 			System.out.println("Adding C language");
 			Thread.sleep(DEFAULT_SLEEP);
 
@@ -69,6 +71,8 @@ public final class Injector
 			langcpp.setCompileCommandLine("g++ -lm -o {:basename} {:mainfile}");
 			langcpp.setProgramExecuteCommandLine("echo valodator");
 			langcpp.setExecutableIdentifierMask("{:basename}");
+			controller.addNewLanguage(langcpp);
+
 			System.out.println("Adding C++ language");
 			Thread.sleep(DEFAULT_SLEEP);
 
@@ -77,12 +81,10 @@ public final class Injector
 			langjava.setCompileCommandLine("javac {:mainfile}");
 			langjava.setProgramExecuteCommandLine("echo valodator");
 			langjava.setExecutableIdentifierMask("{:basename}.class");
+			controller.addNewLanguage(langjava);
+
 			System.out.println("Adding java language");
 			Thread.sleep(DEFAULT_SLEEP);
-
-			controller.addNewLanguage(langc);
-			controller.addNewLanguage(langcpp);
-			controller.addNewLanguage(langjava);
 
 			//Add judge and scoreboard account
 			controller.generateNewAccounts(ClientType.Type.JUDGE.toString(),1,1,1,true);
@@ -97,7 +99,6 @@ public final class Injector
 			System.out.println("Adding 20 team accounts");
 			Thread.sleep(DEFAULT_SLEEP);
 
-			/////
 			//Read valodator.py
 			valodator = new SerializedFile("./valodator.py");
 			String CurLine;
@@ -121,7 +122,7 @@ public final class Injector
 					filter.addProblem(newproblem);
 
 					//Sleeping
-					System.out.println("Adding: " + CurLine +  "");
+					System.out.println("Adding problem " + CurLine + "");
 					Thread.sleep(DEFAULT_SLEEP);
 				}
 				else
@@ -142,7 +143,7 @@ public final class Injector
 			out.println("<br><hr>This list was generated automatically on " + dateFormat.format(date)
 					+ " by <a href=\"http://github.com/emiraga/valodator\">valodator</a>.");
 			out.close();
-			System.out.println("Added " + numProblems +  " problems");
+			System.out.println("Added " + numProblems + " problems");
 		}
 		catch (Exception e)
 		{
