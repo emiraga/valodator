@@ -25,6 +25,7 @@ public final class Injector
 	private SerializedFile valodator;
 	private InternalController controller;
 	private PrintWriter out;
+	private int DEFAULT_SLEEP = 500;
 
 	public static void main(String[] args)
 	{
@@ -39,7 +40,7 @@ public final class Injector
 		//Prepare PC^2 internals
 		IInternalContest model = new InternalContest();
 		controller = new InternalController(model);
-		
+
 		try
 		{
 			//In case html directory is not there
@@ -60,18 +61,24 @@ public final class Injector
 			langc.setCompileCommandLine("gcc -lm -o {:basename} {:mainfile}");
 			langc.setProgramExecuteCommandLine("echo valodator");
 			langc.setExecutableIdentifierMask("{:basename}");
+			System.out.println("Adding C language");
+			Thread.sleep(DEFAULT_SLEEP);
 
 			Language langcpp = new Language("GNU C++ (added by valodator)");
 			langcpp.setActive(true);
 			langcpp.setCompileCommandLine("g++ -lm -o {:basename} {:mainfile}");
 			langcpp.setProgramExecuteCommandLine("echo valodator");
 			langcpp.setExecutableIdentifierMask("{:basename}");
+			System.out.println("Adding C++ language");
+			Thread.sleep(DEFAULT_SLEEP);
 
 			Language langjava = new Language("Java (added by valodator)");
 			langjava.setActive(true);
 			langjava.setCompileCommandLine("javac {:mainfile}");
 			langjava.setProgramExecuteCommandLine("echo valodator");
 			langjava.setExecutableIdentifierMask("{:basename}.class");
+			System.out.println("Adding java language");
+			Thread.sleep(DEFAULT_SLEEP);
 
 			controller.addNewLanguage(langc);
 			controller.addNewLanguage(langcpp);
@@ -79,7 +86,16 @@ public final class Injector
 
 			//Add judge and scoreboard account
 			controller.generateNewAccounts(ClientType.Type.JUDGE.toString(),1,1,1,true);
+			System.out.println("Adding judge account");
+			Thread.sleep(DEFAULT_SLEEP);
+
 			controller.generateNewAccounts(ClientType.Type.SCOREBOARD.toString(),1,1,1,true);
+			System.out.println("Adding scoreboard account");
+			Thread.sleep(DEFAULT_SLEEP);
+
+			controller.generateNewAccounts(ClientType.Type.TEAM.toString(),1,20,1,true);
+			System.out.println("Adding 20 team accounts");
+			Thread.sleep(DEFAULT_SLEEP);
 
 			/////
 			//Read valodator.py
@@ -103,6 +119,10 @@ public final class Injector
 
 					//Add newproblem to be autojudged
 					filter.addProblem(newproblem);
+
+					//Sleeping
+					System.out.println("Adding: " + CurLine +  "");
+					Thread.sleep(DEFAULT_SLEEP);
 				}
 				else
 				{
@@ -120,7 +140,7 @@ public final class Injector
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			Date date = new Date();
 			out.println("<br><hr>This list was generated automatically on " + dateFormat.format(date)
-				+ " by <a href=\"http://github.com/emiraga/valodator\">valodator</a>.");
+					+ " by <a href=\"http://github.com/emiraga/valodator\">valodator</a>.");
 			out.close();
 			System.out.println("Added " + numProblems +  " problems");
 		}

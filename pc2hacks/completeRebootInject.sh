@@ -13,8 +13,8 @@ if [ $? != 0 ]; then exit; fi
 echo "Starting server"
 ./pc2server --login site1 --password site1 &
 
-echo "Waiting 3 seconds"
-sleep 3
+echo "Waiting 5 seconds"
+sleep 5
 
 ./injector < problem_list.txt
 if [ $? != 0 ]; then exit; fi
