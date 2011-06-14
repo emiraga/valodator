@@ -13,15 +13,17 @@ sleep 2
 ./valodator.py sample/timus1000.cpp testout/timus.xml timus/1000
 sleep 2
 
-./valodator.py sample/tju1001.cpp testout/tju.xml tju/1001
-sleep 2
+# TJU is down 
+# ./valodator.py sample/tju1001.cpp testout/tju.xml tju/1001
+# sleep 2
 
-./valodator.py sample/uva10055.cpp testout/uva.xml uva/10055
+# UVa is down
+# ./valodator.py sample/uva10055.cpp testout/uva.xml uva/10055
 
 cat testout/livearchive.xml
 cat testout/spoj.xml
 cat testout/timus.xml
-cat testout/tju.xml
-cat testout/uva.xml
+#cat testout/tju.xml
+#cat testout/uva.xml
 
 rm -rf testout
