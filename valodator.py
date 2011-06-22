@@ -78,7 +78,7 @@ class TooManyVerdicts(RetryableException):
     pass
 class CodeNotSubmitted(RetryableException):
     """ If web page does not show message about  successful submission """
-    pass
+    pass 
 class SubmitTooQuick(RetryableException):
     """ If web page reports that we are submitting too quick """
     pass
@@ -181,64 +181,6 @@ class OnlineJudge(object):
             if pattern in status:
                 return msg
         return None
-
-class LiveArchive(OnlineJudge):
-    """ Online judge livearchive icpc """
-    submiturl = 'http://acmicpc-live-archive.uva.es/nuevoportal/mailer.php'
-    skipfile = './livearchive_skip.txt'
-    languages = ['C', 'C++', 'Java']
-
-    def __init__(self, br_):
-        self.userid = PARSER.get('livearchive', 'userid')
-        self.staturl = ('http://acmicpc-live-archive.uva.es/nuevoportal'
-                + '/status.php?u=' + self.userid)
-        #Call parent contructor
-        OnlineJudge.__init__(self, br_)
-
-    def get_status_list(self, skip=False, retry=True):
-        ret = []
-        soup = BeautifulSoup( self.br_.open(self.staturl).read() )
-        table = soup.find('table', 'ContentTable')
-        for tr_ in table.findAll('tr'):
-            tds = tr_.findAll('td')
-            if len(tds) >= 1 and len(tds[0].contents) >= 1:
-                id_ = re.search('[0-9]+', tds[0].contents[0] )
-            else:
-                id_ = None
-            if len(tds) >= 3 and len(tds[2].contents) >= 1:
-                status = str(tds[2].contents[0])
-            else:
-                status = None
-            if id_ and status and (not skip or id_.group() not in self.skip ):
-                ret.append( (id_.group(), status  ) )
-        return ret
-
-    def get_verdict(self, problem, language, code, retry=True):
-        data = {
-            'paso'     : 'paso', #WTF?
-            'problem'  : problem,
-            'userid'   : self.userid,
-            'language' : self.languages[ language ],
-            'code'     : code,
-            'comment'  : '',
-        }
-        print "Submitting problem..."
-        resp = self.br_.open( self.submiturl, urllib.urlencode(data) )
-        if len(resp.read()) < 2000:
-            raise ResponseTooSmall()
-        for _ in xrange(MAX_REFRESHES):
-            slist = self.get_status_list(True)
-            if len(slist)>=2:
-                raise TooManyVerdicts()
-            if len(slist) == 1:
-                (id_, status) = slist[0]
-                self.add_new_skip(id_)
-                guess = self.guess_verdict(status)
-                if guess:
-                    return guess
-                print 'Unknown status: ' + status
-            time.sleep(2)
-        raise NoVerdictMaxRefreshes()
 
 class TjuOnlineJudge(OnlineJudge):
     """ Online judge tju """
@@ -422,6 +364,101 @@ class SpojOnlineJudge(OnlineJudge):
         print "Submitting problem..."
         resp = self.br_.open( self.submiturl, urllib.urlencode(data) )
         if len(resp.read()) < 2000:
+            raise ResponseTooSmall()
+        for _ in xrange(MAX_REFRESHES):
+            slist = self.get_status_list(True)
+            if len(slist)>=2:
+                raise TooManyVerdicts()
+            if len(slist) == 1:
+                (id_, status) = slist[0]
+                self.add_new_skip(id_)
+                guess = self.guess_verdict(status)
+                if guess:
+                    return guess
+                print 'Unknown status: ' + status
+            time.sleep(2)
+        raise NoVerdictMaxRefreshes()
+
+class LiveArchive(OnlineJudge):
+    """ Online judge livearchive icpc """
+    
+    loginurl = 'http://livearchive.onlinejudge.org/'
+    submiturl = ('http://livearchive.onlinejudge.org/index.php?option=' +
+                        'com_onlinejudge&Itemid=25' )
+    staturl = ('http://livearchive.onlinejudge.org/index.php?option=com_' +
+                        'onlinejudge&Itemid=9')
+    languages = ['1', '3', '2'] # C, C++, Java
+    skipfile = './liveskip.txt'
+
+    def __init__(self, br_):
+        self.username = PARSER.get('livearchive', 'username')
+        self.password = PARSER.get('livearchive', 'password')
+        #Call parent contructor
+        OnlineJudge.__init__(self, br_)
+
+    def login(self):
+        """ Log in to the Uva website """
+        print 'opening front page'
+        self.br_.open(self.loginurl)
+        for form in self.br_.forms():
+            print form.attrs
+            if 'task=login' in form.attrs['action']:
+                form.name = 'login'
+        self.br_.select_form('login')
+        self.br_.form['username'] = self.username
+        self.br_.form['passwd'] = self.password
+        self.br_.form['remember'] = ['yes']
+        print 'logging in...'
+        self.br_.submit()
+
+    def get_status_list(self, skip=False, retry=True):
+        ret = []
+        resp = self.br_.open(self.staturl)
+        try:
+            self.br_.find_link(text='Logout')
+        except mechanize.LinkNotFoundError:
+            if retry:
+                self.login()
+                return self.get_status_list(skip, retry=False)
+            else:
+                raise CouldNotLogin()
+        soup = BeautifulSoup( resp.read() )
+        for tr_ in itertools.chain(
+                soup.findAll('tr', 'sectiontableentry1'),
+                soup.findAll('tr', 'sectiontableentry2') ):
+            tds = tr_.findAll('td')
+            if len(tds) >= 1 and len(tds[0].contents) >= 1:
+                id_ = re.search('[0-9]+', tds[0].contents[0])
+            else:
+                id_ = None
+            if len(tds) >= 4:
+                status = str(tds[3])
+            else:
+                status = None
+            if id_ and len(id_.group()) >= 6 and status and (
+                    not skip or id_.group() not in self.skip ):
+                ret.append( (id_.group(), status  ) )
+        return ret
+
+    def get_verdict(self, problem, language, code, retry=True):
+        
+        self.br_.open( self.submiturl )
+        self.br_.select_form( nr=2 )
+        self.br_.form[ 'localid' ] = problem
+        self.br_.form[ "language" ] = [ self.languages[ language ] ]
+        self.br_.form[ 'code' ] = code
+        resp = self.br_.submit()
+
+        try:
+            self.br_.find_link(text='Logout')
+        except mechanize.LinkNotFoundError:
+            if retry:
+                self.login()
+                return self.get_verdict(problem, language, code, retry=False)
+            else:
+                raise CouldNotLogin()
+        
+        if len(resp.read()) < 200:
             raise ResponseTooSmall()
         for _ in xrange(MAX_REFRESHES):
             slist = self.get_status_list(True)
